@@ -17,9 +17,13 @@ export async function POST(req: Request) {
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    const safeModel = model || "gpt-image-1";
-    const safeSize = size || "1024x1024";
-    const safeQuality = quality || "medium";
+    const allowedModels = ["gpt-image-1", "gpt-image-1-mini"];
+    const allowedSizes = ["1024x1024", "1536x1024", "1024x1536"];
+    const allowedQuality = ["low", "medium", "high"];
+
+    const safeModel = allowedModels.includes(model) ? model : "gpt-image-1-mini";
+    const safeSize = allowedSizes.includes(size) ? size : "1024x1024";
+    const safeQuality = allowedQuality.includes(quality) ? quality : "low";
 
     const result = await openai.images.generate({
       model: safeModel,
@@ -36,6 +40,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       imageUrl: `data:image/png;base64,${imageBase64}`,
+      used: {
+        model: safeModel,
+        size: safeSize,
+        quality: safeQuality,
+      },
     });
   } catch (error) {
     console.error(error);
