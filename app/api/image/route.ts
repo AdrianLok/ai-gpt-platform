@@ -2,95 +2,71 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-
-    const {
-      prompt,
-      model,
-    } = body;
+    const { prompt, model } = await req.json();
 
     if (!prompt) {
+      return NextResponse.json({ error: "请输入提示词" }, { status: 400 });
+    }
+
+    const baseUrl = process.env.WILDCARD_BASE_URL;
+    const apiKey = process.env.WILDCARD_API_KEY;
+
+    if (!baseUrl || !apiKey) {
       return NextResponse.json(
-        {
-          error: "请输入提示词",
-        },
-        { status: 400 }
+        { error: "未配置 WILDCARD_BASE_URL 或 WILDCARD_API_KEY" },
+        { status: 500 }
       );
     }
 
-    const response = await fetch(
-      `${process.env.WILDCARD_BASE_URL}/images/generations`,
-      {
-        method: "POST",
+    const response = await fetch(`${baseUrl}/images/generations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model || "gpt-image-1.5",
+        prompt,
+        n: 1,
+      }),
+    });
 
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.WILDCARD_API_KEY}`,
-        },
+    const text = await response.text();
 
-        body: JSON.stringify({
-          model: model || "gpt-image-1.5",
-          prompt,
-          n: 1,
-        }),
-      }
-    );
-
-    const data = await response.json();
-
-    console.log(data);
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error("非 JSON 返回:", text);
+      return NextResponse.json(
+        { error: "接口返回非JSON，请检查 WILDCARD_BASE_URL 是否正确" },
+        { status: 500 }
+      );
+    }
 
     if (!response.ok) {
       return NextResponse.json(
-        {
-          error:
-            data?.error?.message ||
-            data?.message ||
-            "图片生成失败",
-        },
-        {
-          status: 500,
-        }
+        { error: data?.error?.message || data?.message || "图片生成失败" },
+        { status: 500 }
       );
     }
 
-    let imageUrl = "";
+    const item = data?.data?.[0];
 
-    // OpenAI 格式
-    if (data?.data?.[0]?.url) {
-      imageUrl = data.data[0].url;
-    }
-
-    // base64 格式
-    if (data?.data?.[0]?.b64_json) {
-      imageUrl = `data:image/png;base64,${data.data[0].b64_json}`;
-    }
+    const imageUrl = item?.b64_json
+      ? `data:image/png;base64,${item.b64_json}`
+      : item?.url || item?.image_url || item?.image;
 
     if (!imageUrl) {
-      return NextResponse.json(
-        {
-          error: "未获取到图片",
-        },
-        {
-          status: 500,
-        }
-      );
+      return NextResponse.json({ error: "未获取到图片" }, { status: 500 });
     }
 
-    return NextResponse.json({
-      imageUrl,
-    });
-
+    return NextResponse.json({ imageUrl });
   } catch (error: any) {
     console.error(error);
-
     return NextResponse.json(
-      {
-        error: error.message || "生成失败",
-      },
-      {
-        status: 500,
-      }
+      { error: error.message || "生成失败" },
+      { status: 500 }
     );
   }
 }
