@@ -13,22 +13,49 @@ import ReactFlow, {
   Position,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { ImageIcon, Plus, ArrowUp, Sparkles, Maximize2, Download, X } from "lucide-react";
+import {
+  ImageIcon,
+  Plus,
+  ArrowUp,
+  Sparkles,
+  Maximize2,
+  Download,
+  X,
+  Trash2,
+  Loader2,
+} from "lucide-react";
 
-function ImageNode({ data }: NodeProps) {
+function ImageNode({ data, selected }: NodeProps) {
   return (
     <div className="relative">
       <div className="mb-2 flex items-center gap-2 text-sm text-white/70">
         <ImageIcon size={16} />
         {data.title}
+        {data.loading && (
+          <span className="ml-2 flex items-center gap-1 text-xs text-blue-300">
+            <Loader2 size={12} className="animate-spin" />
+            生成中
+          </span>
+        )}
       </div>
 
-      <div className="relative flex h-72 w-[430px] items-center justify-center rounded-3xl border border-white/10 bg-[#1f1f1f] shadow-2xl">
-        {data.image ? (
+      <div
+        className={`relative flex h-72 w-[430px] items-center justify-center rounded-3xl bg-[#1f1f1f] shadow-2xl transition ${
+          selected
+            ? "border-2 border-white/70"
+            : "border border-white/10"
+        }`}
+      >
+        {data.loading ? (
+          <div className="flex flex-col items-center gap-3 text-white/50">
+            <Loader2 size={42} className="animate-spin" />
+            <p>AI 正在生成图片...</p>
+          </div>
+        ) : data.image ? (
           <>
             <img
               src={data.image}
-              className="h-full w-full rounded-3xl object-contain bg-[#1f1f1f]"
+              className="h-full w-full rounded-3xl bg-[#1f1f1f] object-contain"
             />
 
             <div className="absolute right-3 top-3 flex gap-2">
@@ -46,15 +73,25 @@ function ImageNode({ data }: NodeProps) {
               >
                 <Download size={16} />
               </a>
+
+              <button
+                onClick={() => data.onDelete(data.id)}
+                className="rounded-full bg-black/60 p-2 hover:bg-red-500"
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
           </>
         ) : (
-          <ImageIcon size={54} className="text-white/20" />
+          <div className="flex flex-col items-center gap-3 text-white/25">
+            <ImageIcon size={54} />
+            <p className="text-sm">空图片节点</p>
+          </div>
         )}
       </div>
 
-      <Handle type="source" position={Position.Right} className="!h-5 !w-5 !bg-white/40" />
-      <Handle type="target" position={Position.Left} className="!h-5 !w-5 !bg-white/40" />
+      <Handle type="source" position={Position.Right} className="!h-5 !w-5 !bg-white/50" />
+      <Handle type="target" position={Position.Left} className="!h-5 !w-5 !bg-white/50" />
     </div>
   );
 }
@@ -67,40 +104,35 @@ export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState("");
-  const [imageCount, setImageCount] = useState(0);
+  const [count, setCount] = useState(1);
+
+  const deleteNode = useCallback((id: string) => {
+    setNodes((nds) => nds.filter((node) => node.id !== id));
+    setEdges((eds) => eds.filter((edge) => edge.source !== id && edge.target !== id));
+  }, []);
+
+  const createNodeData = useCallback(
+    (id: string, title: string, image = "", nodeLoading = false) => ({
+      id,
+      title,
+      image,
+      loading: nodeLoading,
+      onPreview: setPreviewImage,
+      onDelete: deleteNode,
+    }),
+    [deleteNode]
+  );
 
   const [nodes, setNodes, onNodesChange] = useNodesState([
     {
-      id: "input-image",
+      id: "source",
       type: "imageNode",
       position: { x: 120, y: 180 },
-      data: {
-        title: "Image",
-        image: "",
-        onPreview: setPreviewImage,
-      },
-    },
-    {
-      id: "generate-image",
-      type: "imageNode",
-      position: { x: 760, y: 220 },
-      data: {
-        title: "图片生成",
-        image: "",
-        onPreview: setPreviewImage,
-      },
+      data: createNodeData("source", "Image"),
     },
   ]);
 
-  const [edges, setEdges, onEdgesChange] = useEdgesState([
-    {
-      id: "edge-1",
-      source: "input-image",
-      target: "generate-image",
-      animated: true,
-      style: { stroke: "#8b8b8b", strokeWidth: 3 },
-    },
-  ]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   const onConnect = useCallback(
     (params: Connection) =>
@@ -117,10 +149,50 @@ export default function Home() {
     [setEdges]
   );
 
+  function addEmptyNode() {
+    const id = `node-${Date.now()}`;
+    setCount((v) => v + 1);
+
+    setNodes((nds) => [
+      ...nds,
+      {
+        id,
+        type: "imageNode",
+        position: { x: 260 + count * 80, y: 180 + count * 70 },
+        data: createNodeData(id, `Image ${count + 1}`),
+      },
+    ]);
+  }
+
   async function generateImage() {
     if (!prompt.trim()) return;
 
     setLoading(true);
+
+    const id = `result-${Date.now()}`;
+
+    setNodes((nds) => [
+      ...nds,
+      {
+        id,
+        type: "imageNode",
+        position: { x: 760 + count * 70, y: 210 + count * 55 },
+        data: createNodeData(id, `图片生成 ${count}`, "", true),
+      },
+    ]);
+
+    setEdges((eds) => [
+      ...eds,
+      {
+        id: `edge-${id}`,
+        source: "source",
+        target: id,
+        animated: true,
+        style: { stroke: "#8b8b8b", strokeWidth: 3 },
+      },
+    ]);
+
+    setCount((v) => v + 1);
 
     try {
       const res = await fetch("/api/image", {
@@ -134,40 +206,23 @@ export default function Home() {
       const data = await res.json();
 
       if (data.imageUrl) {
-        const newId = `result-${Date.now()}`;
-        const nextCount = imageCount + 1;
-
-        setImageCount(nextCount);
-
-        setNodes((nds) => [
-          ...nds,
-          {
-            id: newId,
-            type: "imageNode",
-            position: { x: 760 + nextCount * 80, y: 220 + nextCount * 70 },
-            data: {
-              title: `生成结果 ${nextCount}`,
-              image: data.imageUrl,
-              onPreview: setPreviewImage,
-            },
-          },
-        ]);
-
-        setEdges((eds) => [
-          ...eds,
-          {
-            id: `edge-${newId}`,
-            source: "input-image",
-            target: newId,
-            animated: true,
-            style: { stroke: "#8b8b8b", strokeWidth: 3 },
-          },
-        ]);
+        setNodes((nds) =>
+          nds.map((node) =>
+            node.id === id
+              ? {
+                  ...node,
+                  data: createNodeData(id, node.data.title, data.imageUrl, false),
+                }
+              : node
+          )
+        );
       } else {
         alert(data.error || "图片生成失败");
+        setNodes((nds) => nds.filter((node) => node.id !== id));
       }
     } catch {
       alert("图片生成失败");
+      setNodes((nds) => nds.filter((node) => node.id !== id));
     }
 
     setLoading(false);
@@ -182,6 +237,9 @@ export default function Home() {
 
       <div className="absolute right-5 top-5 z-30 flex items-center gap-3">
         <button className="rounded-full bg-white/10 px-4 py-2 text-sm backdrop-blur hover:bg-white/20">
+          702
+        </button>
+        <button className="rounded-full bg-white/10 px-4 py-2 text-sm backdrop-blur hover:bg-white/20">
           社区
         </button>
         <button className="rounded-full bg-white/10 px-4 py-2 text-sm backdrop-blur hover:bg-white/20">
@@ -190,12 +248,20 @@ export default function Home() {
       </div>
 
       <div className="absolute left-5 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-3 rounded-2xl bg-white/10 p-2 backdrop-blur">
-        <button className="rounded-full bg-white p-2 text-black">
+        <button
+          onClick={addEmptyNode}
+          className="rounded-full bg-white p-2 text-black hover:scale-105"
+        >
           <Plus size={20} />
         </button>
-        <button className="rounded-xl p-2 text-white/70 hover:bg-white/10">
+
+        <button
+          onClick={addEmptyNode}
+          className="rounded-xl p-2 text-white/70 hover:bg-white/10"
+        >
           <ImageIcon size={20} />
         </button>
+
         <button className="rounded-xl p-2 text-white/70 hover:bg-white/10">
           <Sparkles size={20} />
         </button>
@@ -222,7 +288,10 @@ export default function Home() {
           <button className="rounded-xl bg-white/10 p-3 text-white/70">
             <ImageIcon size={18} />
           </button>
-          <button className="rounded-xl bg-white/10 p-3 text-white/70">
+          <button
+            onClick={addEmptyNode}
+            className="rounded-xl bg-white/10 p-3 text-white/70"
+          >
             <Plus size={18} />
           </button>
           <button className="ml-auto rounded-xl bg-white/10 p-3 text-white/70">
