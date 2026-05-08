@@ -31,8 +31,6 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: safeModel,
         prompt,
-        size: safeSize,
-        quality: safeQuality,
         n: 1,
       }),
     });
