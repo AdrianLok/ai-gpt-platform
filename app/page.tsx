@@ -32,9 +32,8 @@ import {
 } from "lucide-react";
 
 const modelOptions = [
-  { label: "GPT Image 1", value: "gpt-image-1", tag: "稳定", sub: "OpenAI 官方生图模型" },
-  { label: "GPT Image 1.5", value: "gpt-image-1.5", tag: "尝试", sub: "如果可用则使用" },
-  { label: "GPT Image Mini", value: "gpt-image-1-mini", tag: "省钱", sub: "低成本测试模型" },
+  { label: "GPT Image Mini", value: "gpt-image-1-mini", tag: "最低成本", sub: "默认测试用，最省钱" },
+  { label: "GPT Image 1", value: "gpt-image-1", tag: "稳定", sub: "质量更好，成本更高" },
 ];
 
 const sizeOptions = [
@@ -115,9 +114,9 @@ export default function Home() {
   const [previewImage, setPreviewImage] = useState("");
   const [count, setCount] = useState(1);
 
-  const [model, setModel] = useState("gpt-image-1");
+  const [model, setModel] = useState("gpt-image-1-mini");
   const [size, setSize] = useState("1024x1024");
-  const [quality, setQuality] = useState("medium");
+  const [quality, setQuality] = useState("low");
 
   const [modelOpen, setModelOpen] = useState(false);
   const [paramOpen, setParamOpen] = useState(false);
