@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { prompt, model } = await req.json();
+    const { prompt, model, size, quality } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ error: "请输入提示词" }, { status: 400 });
@@ -28,6 +28,8 @@ export async function POST(req: Request) {
         model: model || "gpt-image-1.5",
         prompt,
         n: 1,
+        size: size || "1024x1024",
+        quality: quality || "low",
       }),
     });
 
@@ -51,17 +53,21 @@ export async function POST(req: Request) {
       );
     }
 
-    const item = data?.data?.[0];
+    const imageBase64 = data?.data?.[0]?.b64_json;
 
-    const imageUrl = item?.b64_json
-      ? `data:image/png;base64,${item.b64_json}`
-      : item?.url || item?.image_url || item?.image;
-
-    if (!imageUrl) {
+    if (!imageBase64) {
       return NextResponse.json({ error: "未获取到图片" }, { status: 500 });
     }
 
-    return NextResponse.json({ imageUrl });
+    return NextResponse.json({
+      imageUrl: `data:image/png;base64,${imageBase64}`,
+      used: {
+        model: data.model || model || "gpt-image-1.5",
+        size: data.size || size || "1024x1024",
+        quality: data.quality || quality || "low",
+      },
+      usage: data.usage || null,
+    });
   } catch (error: any) {
     console.error(error);
     return NextResponse.json(
