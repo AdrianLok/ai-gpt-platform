@@ -10,28 +10,30 @@ export type ImageModel = {
 export const imageModels: ImageModel[] = [
   {
     label: "GPT Image Mini",
-    value: "openai/gpt-image-1-mini",
+    value: "gpt-5-mini",
     provider: "OpenAI",
     tag: "低成本",
-    sub: "适合测试和日常出图",
+    sub: "适合测试和快速生成",
     qualityLabel: "1K",
   },
+
   {
-    label: "GPT Image 1",
-    value: "openai/gpt-image-1",
+    label: "GPT Image 1.5",
+    value: "gpt-image-1.5",
     provider: "OpenAI",
-    tag: "稳定",
-    sub: "质量更好，成本更高",
+    tag: "主力模型",
+    sub: "高质量 AI 出图",
     qualityLabel: "4K",
   },
+
   {
-    label: "即梦 Lite",
-    value: "jimeng/jimeng-lite",
-    provider: "即梦",
-    tag: "中文审美",
-    sub: "适合电商、海报、中文风格图",
-    qualityLabel: "2K",
+    label: "GPT Image 2 Plus",
+    value: "gpt-image-2-plus",
+    provider: "OpenAI",
+    tag: "旗舰",
+    sub: "更强细节与审美",
+    qualityLabel: "4K",
   },
 ];
 
-export const defaultImageModel = imageModels[0];
+export const defaultImageModel = imageModels[1];
