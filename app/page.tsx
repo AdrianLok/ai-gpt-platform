@@ -12,11 +12,8 @@ import {
   X,
 } from "lucide-react";
 
-import { imageModels } from "@/lib/models";
-import {
-  imageDetails,
-  imageRatios,
-} from "@/lib/image-options";
+import { imageModels } from "../lib/models";
+import { imageRatios, imageDetails } from "../lib/image-options";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
