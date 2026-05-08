@@ -1,10 +1,6 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(req: Request) {
   try {
     const { message } = await req.json();
@@ -18,14 +14,18 @@ export async function POST(req: Request) {
 
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        { error: "服务器未配置 OPENAI_API_KEY" },
+        { error: "服务器未配置 OPENAI_API_KEY，你现在可以先看界面，后面添加 API Key 后即可使用 GPT 功能。" },
         { status: 500 }
       );
     }
 
-    const response = await client.responses.create({
-      model: "gpt-5.5",
-      input: [
+    const client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
         {
           role: "system",
           content:
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({
-      reply: response.output_text,
+      reply: response.choices[0]?.message?.content || "没有返回内容",
     });
   } catch (error) {
     console.error(error);
