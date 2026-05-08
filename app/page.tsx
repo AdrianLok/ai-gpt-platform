@@ -23,7 +23,29 @@ import {
   X,
   Trash2,
   Loader2,
+  Check,
+  ChevronDown,
 } from "lucide-react";
+
+const modelOptions = [
+  { label: "GPT Image 1", value: "gpt-image-1", tag: "稳定" },
+  { label: "GPT Image 1.5", value: "gpt-image-1.5", tag: "新" },
+  { label: "GPT Image Mini", value: "gpt-image-1-mini", tag: "省钱" },
+];
+
+const ratioOptions = [
+  { label: "1:1", value: "1024x1024" },
+  { label: "4:3", value: "1536x1024" },
+  { label: "3:4", value: "1024x1536" },
+  { label: "16:9", value: "1536x1024" },
+  { label: "9:16", value: "1024x1536" },
+];
+
+const qualityOptions = [
+  { label: "低", value: "low" },
+  { label: "中", value: "medium" },
+  { label: "高", value: "high" },
+];
 
 function ImageNode({ data, selected }: NodeProps) {
   return (
@@ -41,9 +63,7 @@ function ImageNode({ data, selected }: NodeProps) {
 
       <div
         className={`relative flex h-72 w-[430px] items-center justify-center rounded-3xl bg-[#1f1f1f] shadow-2xl transition ${
-          selected
-            ? "border-2 border-white/70"
-            : "border border-white/10"
+          selected ? "border-2 border-white/70" : "border border-white/10"
         }`}
       >
         {data.loading ? (
@@ -53,31 +73,18 @@ function ImageNode({ data, selected }: NodeProps) {
           </div>
         ) : data.image ? (
           <>
-            <img
-              src={data.image}
-              className="h-full w-full rounded-3xl bg-[#1f1f1f] object-contain"
-            />
+            <img src={data.image} className="h-full w-full rounded-3xl bg-[#1f1f1f] object-contain" />
 
             <div className="absolute right-3 top-3 flex gap-2">
-              <button
-                onClick={() => data.onPreview(data.image)}
-                className="rounded-full bg-black/60 p-2 hover:bg-black"
-              >
+              <button onClick={() => data.onPreview(data.image)} className="rounded-full bg-black/60 p-2 hover:bg-black">
                 <Maximize2 size={16} />
               </button>
 
-              <a
-                href={data.image}
-                download="ai-image.png"
-                className="rounded-full bg-black/60 p-2 hover:bg-black"
-              >
+              <a href={data.image} download="ai-image.png" className="rounded-full bg-black/60 p-2 hover:bg-black">
                 <Download size={16} />
               </a>
 
-              <button
-                onClick={() => data.onDelete(data.id)}
-                className="rounded-full bg-black/60 p-2 hover:bg-red-500"
-              >
+              <button onClick={() => data.onDelete(data.id)} className="rounded-full bg-black/60 p-2 hover:bg-red-500">
                 <Trash2 size={16} />
               </button>
             </div>
@@ -96,15 +103,21 @@ function ImageNode({ data, selected }: NodeProps) {
   );
 }
 
-const nodeTypes = {
-  imageNode: ImageNode,
-};
+const nodeTypes = { imageNode: ImageNode };
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState("");
   const [count, setCount] = useState(1);
+
+  const [model, setModel] = useState("gpt-image-1");
+  const [size, setSize] = useState("1536x1024");
+  const [quality, setQuality] = useState("medium");
+
+  const [modelOpen, setModelOpen] = useState(false);
+  const [sizeOpen, setSizeOpen] = useState(false);
+  const [qualityOpen, setQualityOpen] = useState(false);
 
   const deleteNode = useCallback((id: string) => {
     setNodes((nds) => nds.filter((node) => node.id !== id));
@@ -197,10 +210,8 @@ export default function Home() {
     try {
       const res = await fetch("/api/image", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, model, size, quality }),
       });
 
       const data = await res.json();
@@ -209,10 +220,7 @@ export default function Home() {
         setNodes((nds) =>
           nds.map((node) =>
             node.id === id
-              ? {
-                  ...node,
-                  data: createNodeData(id, node.data.title, data.imageUrl, false),
-                }
+              ? { ...node, data: createNodeData(id, node.data.title, data.imageUrl, false) }
               : node
           )
         );
@@ -228,6 +236,10 @@ export default function Home() {
     setLoading(false);
   }
 
+  const currentModel = modelOptions.find((m) => m.value === model)?.label || "GPT Image";
+  const currentRatio = ratioOptions.find((r) => r.value === size)?.label || "4:3";
+  const currentQuality = qualityOptions.find((q) => q.value === quality)?.label || "中";
+
   return (
     <main className="h-screen w-screen overflow-hidden bg-black text-white">
       <div className="absolute left-5 top-5 z-30 flex items-center gap-3">
@@ -236,32 +248,18 @@ export default function Home() {
       </div>
 
       <div className="absolute right-5 top-5 z-30 flex items-center gap-3">
-        <button className="rounded-full bg-white/10 px-4 py-2 text-sm backdrop-blur hover:bg-white/20">
-          702
-        </button>
-        <button className="rounded-full bg-white/10 px-4 py-2 text-sm backdrop-blur hover:bg-white/20">
-          社区
-        </button>
-        <button className="rounded-full bg-white/10 px-4 py-2 text-sm backdrop-blur hover:bg-white/20">
-          分享
-        </button>
+        <button className="rounded-full bg-white/10 px-4 py-2 text-sm backdrop-blur hover:bg-white/20">702</button>
+        <button className="rounded-full bg-white/10 px-4 py-2 text-sm backdrop-blur hover:bg-white/20">社区</button>
+        <button className="rounded-full bg-white/10 px-4 py-2 text-sm backdrop-blur hover:bg-white/20">分享</button>
       </div>
 
       <div className="absolute left-5 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-3 rounded-2xl bg-white/10 p-2 backdrop-blur">
-        <button
-          onClick={addEmptyNode}
-          className="rounded-full bg-white p-2 text-black hover:scale-105"
-        >
+        <button onClick={addEmptyNode} className="rounded-full bg-white p-2 text-black hover:scale-105">
           <Plus size={20} />
         </button>
-
-        <button
-          onClick={addEmptyNode}
-          className="rounded-xl p-2 text-white/70 hover:bg-white/10"
-        >
+        <button onClick={addEmptyNode} className="rounded-xl p-2 text-white/70 hover:bg-white/10">
           <ImageIcon size={20} />
         </button>
-
         <button className="rounded-xl p-2 text-white/70 hover:bg-white/10">
           <Sparkles size={20} />
         </button>
@@ -288,10 +286,7 @@ export default function Home() {
           <button className="rounded-xl bg-white/10 p-3 text-white/70">
             <ImageIcon size={18} />
           </button>
-          <button
-            onClick={addEmptyNode}
-            className="rounded-xl bg-white/10 p-3 text-white/70"
-          >
+          <button onClick={addEmptyNode} className="rounded-xl bg-white/10 p-3 text-white/70">
             <Plus size={18} />
           </button>
           <button className="ml-auto rounded-xl bg-white/10 p-3 text-white/70">
@@ -306,10 +301,114 @@ export default function Home() {
           className="h-28 w-full resize-none bg-transparent text-base outline-none placeholder:text-white/35"
         />
 
-        <div className="flex items-center gap-4 border-t border-white/10 pt-3 text-sm text-white/70">
-          <span>◎ GPT Image 1.5</span>
-          <span>▣ 4:3</span>
-          <span>4K · 中</span>
+        <div className="relative flex items-center gap-3 border-t border-white/10 pt-3 text-sm text-white/70">
+          <div className="relative">
+            <button
+              onClick={() => {
+                setModelOpen(!modelOpen);
+                setSizeOpen(false);
+                setQualityOpen(false);
+              }}
+              className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-white hover:bg-white/20"
+            >
+              ◎ {currentModel}
+              <ChevronDown size={14} />
+            </button>
+
+            {modelOpen && (
+              <div className="absolute bottom-12 left-0 w-72 rounded-3xl bg-[#2b2b2b] p-3 shadow-2xl">
+                {modelOptions.map((item) => (
+                  <button
+                    key={item.value}
+                    onClick={() => {
+                      setModel(item.value);
+                      setModelOpen(false);
+                    }}
+                    className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left hover:bg-white/10"
+                  >
+                    <span>{item.label}</span>
+                    <div className="flex items-center gap-2">
+                      {item.tag && <span className="rounded-full bg-cyan-300 px-2 py-0.5 text-xs text-black">{item.tag}</span>}
+                      {model === item.value && <Check size={16} />}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="relative">
+            <button
+              onClick={() => {
+                setSizeOpen(!sizeOpen);
+                setModelOpen(false);
+                setQualityOpen(false);
+              }}
+              className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-white hover:bg-white/20"
+            >
+              ▣ {currentRatio} · 4K
+              <ChevronDown size={14} />
+            </button>
+
+            {sizeOpen && (
+              <div className="absolute bottom-12 left-0 w-96 rounded-3xl bg-[#2b2b2b] p-5 shadow-2xl">
+                <p className="mb-3 text-white/50">比例</p>
+                <div className="grid grid-cols-5 gap-3">
+                  {ratioOptions.map((item) => (
+                    <button
+                      key={item.label}
+                      onClick={() => {
+                        setSize(item.value);
+                        setSizeOpen(false);
+                      }}
+                      className={`rounded-2xl px-3 py-4 ${
+                        size === item.value ? "bg-white/20 text-white" : "bg-white/5 text-white/50"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="relative">
+            <button
+              onClick={() => {
+                setQualityOpen(!qualityOpen);
+                setModelOpen(false);
+                setSizeOpen(false);
+              }}
+              className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-white hover:bg-white/20"
+            >
+              精细度 · {currentQuality}
+              <ChevronDown size={14} />
+            </button>
+
+            {qualityOpen && (
+              <div className="absolute bottom-12 left-0 w-72 rounded-3xl bg-[#2b2b2b] p-5 shadow-2xl">
+                <p className="mb-3 text-white/50">精细度</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {qualityOptions.map((item) => (
+                    <button
+                      key={item.value}
+                      onClick={() => {
+                        setQuality(item.value);
+                        setQualityOpen(false);
+                      }}
+                      className={`rounded-2xl px-4 py-3 ${
+                        quality === item.value ? "bg-white/20 text-white" : "bg-white/5 text-white/50"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <span>风格</span>
           <span>摄影机控制</span>
 
@@ -326,23 +425,13 @@ export default function Home() {
 
       {previewImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-10">
-          <button
-            onClick={() => setPreviewImage("")}
-            className="absolute right-8 top-8 rounded-full bg-white/10 p-3 hover:bg-white/20"
-          >
+          <button onClick={() => setPreviewImage("")} className="absolute right-8 top-8 rounded-full bg-white/10 p-3 hover:bg-white/20">
             <X size={24} />
           </button>
 
-          <img
-            src={previewImage}
-            className="max-h-full max-w-full rounded-3xl object-contain"
-          />
+          <img src={previewImage} className="max-h-full max-w-full rounded-3xl object-contain" />
 
-          <a
-            href={previewImage}
-            download="ai-image.png"
-            className="absolute bottom-8 rounded-full bg-white px-6 py-3 font-bold text-black"
-          >
+          <a href={previewImage} download="ai-image.png" className="absolute bottom-8 rounded-full bg-white px-6 py-3 font-bold text-black">
             下载图片
           </a>
         </div>
