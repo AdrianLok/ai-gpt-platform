@@ -1,4 +1,3 @@
-import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -9,37 +8,61 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "请输入提示词" }, { status: 400 });
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json({ error: "未配置 OPENAI_API_KEY" }, { status: 500 });
+    const apiKey = process.env.WILDCARD_API_KEY;
+    const baseUrl = process.env.WILDCARD_BASE_URL;
+
+    if (!apiKey || !baseUrl) {
+      return NextResponse.json(
+        { error: "未配置 WILDCARD_API_KEY 或 WILDCARD_BASE_URL" },
+        { status: 500 }
+      );
     }
 
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+    const safeModel = model || "openai/gpt-image-1-mini";
+    const safeSize = size || "1024x1024";
+    const safeQuality = quality || "low";
+
+    const response = await fetch(`${baseUrl}/images/generations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: safeModel,
+        prompt,
+        size: safeSize,
+        quality: safeQuality,
+        n: 1,
+      }),
     });
 
-    const allowedModels = ["gpt-image-1", "gpt-image-1-mini"];
-    const allowedSizes = ["1024x1024", "1536x1024", "1024x1536"];
-    const allowedQuality = ["low", "medium", "high"];
+    const data = await response.json();
 
-    const safeModel = allowedModels.includes(model) ? model : "gpt-image-1-mini";
-    const safeSize = allowedSizes.includes(size) ? size : "1024x1024";
-    const safeQuality = allowedQuality.includes(quality) ? quality : "low";
+    if (!response.ok) {
+      console.error("Wildcard error:", data);
+      return NextResponse.json(
+        { error: data.error?.message || data.message || "图片生成失败" },
+        { status: 500 }
+      );
+    }
 
-    const result = await openai.images.generate({
-      model: safeModel,
-      prompt,
-      size: safeSize,
-      quality: safeQuality,
-    } as any);
+    const item = data.data?.[0];
 
-    const imageBase64 = result.data?.[0]?.b64_json;
+    const imageUrl =
+      item?.b64_json
+        ? `data:image/png;base64,${item.b64_json}`
+        : item?.url || item?.image_url || item?.image;
 
-    if (!imageBase64) {
-      return NextResponse.json({ error: "生成失败" }, { status: 500 });
+    if (!imageUrl) {
+      return NextResponse.json(
+        { error: "没有拿到图片结果，请检查 Wildcard 模型返回格式" },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
-      imageUrl: `data:image/png;base64,${imageBase64}`,
+      imageUrl,
       used: {
         model: safeModel,
         size: safeSize,
@@ -49,7 +72,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { error: "图片生成失败，请检查模型、参数、API余额" },
+      { error: "图片生成失败，请检查 Wildcard API、模型名称或余额" },
       { status: 500 }
     );
   }
