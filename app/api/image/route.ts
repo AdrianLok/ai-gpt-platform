@@ -17,11 +17,15 @@ export async function POST(req: Request) {
       apiKey: process.env.OPENAI_API_KEY,
     });
 
+    const safeModel = model || "gpt-image-1";
+    const safeSize = size || "1024x1024";
+    const safeQuality = quality || "medium";
+
     const result = await openai.images.generate({
-      model: model || "gpt-image-1",
+      model: safeModel,
       prompt,
-      size: size || "1024x1024",
-      quality: quality || "medium",
+      size: safeSize,
+      quality: safeQuality,
     } as any);
 
     const imageBase64 = result.data?.[0]?.b64_json;
@@ -35,6 +39,9 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: "图片生成失败，请检查模型/参数/API余额" }, { status: 500 });
+    return NextResponse.json(
+      { error: "图片生成失败，请检查模型、参数、API余额" },
+      { status: 500 }
+    );
   }
 }
