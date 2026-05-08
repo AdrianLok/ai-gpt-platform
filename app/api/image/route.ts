@@ -56,7 +56,7 @@ export async function POST(req: Request) {
 
     if (!imageUrl) {
       return NextResponse.json(
-        { error: "没有拿到图片结果，请检查 Wildcard 模型返回格式" },
+        { error: "没有拿到图片结果，请检查 Wildcard 返回格式" },
         { status: 500 }
       );
     }
