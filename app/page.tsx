@@ -32,8 +32,86 @@ import {
 } from "lucide-react";
 
 const modelOptions = [
-  { label: "GPT Image Mini", value: "gpt-image-1-mini", tag: "最低成本", sub: "默认测试用，最省钱" },
-  { label: "GPT Image 1", value: "gpt-image-1", tag: "稳定", sub: "质量更好，成本更高" },
+  {
+    label: "GPT Image Mini",
+    value: "openai/gpt-image-1-mini",
+    tag: "低成本",
+    sub: "适合快速测试与日常出图",
+    provider: "OpenAI",
+    quality: "4K",
+  },
+
+  {
+    label: "GPT Image 1",
+    value: "openai/gpt-image-1",
+    tag: "官方",
+    sub: "OpenAI 官方高质量模型",
+    provider: "OpenAI",
+    quality: "4K",
+  },
+
+  {
+    label: "Gemini Flash Image",
+    value: "google/gemini-2.5-flash-image",
+    tag: "Gemini",
+    sub: "Google 多模态图像生成",
+    provider: "Google",
+    quality: "4K",
+  },
+
+  {
+    label: "Gemini Pro Vision",
+    value: "google/gemini-pro-vision",
+    tag: "视觉",
+    sub: "适合图像理解与生成",
+    provider: "Google",
+    quality: "4K",
+  },
+
+  {
+    label: "即梦 4.0",
+    value: "jimeng/jimeng-4.0",
+    tag: "热门",
+    sub: "中文审美、电商海报",
+    provider: "即梦",
+    quality: "4K",
+  },
+
+  {
+    label: "即梦 5.0 Lite",
+    value: "jimeng/jimeng-5.0-lite",
+    tag: "高速",
+    sub: "更快生成速度",
+    provider: "即梦",
+    quality: "2K",
+  },
+
+  {
+    label: "Banana",
+    value: "banana/banana-image",
+    tag: "轻量",
+    sub: "快速生成",
+    provider: "Banana",
+    quality: "1080P",
+  },
+
+  {
+    label: "Banana 2",
+    value: "banana/banana-2",
+    tag: "4K",
+    sub: "高清动漫与插画",
+    provider: "Banana",
+    quality: "4K",
+  },
+
+  {
+    label: "Banana Pro",
+    value: "banana/banana-pro",
+    tag: "专业",
+    sub: "高精度商业出图",
+    provider: "Banana",
+    quality: "4K",
+  },
 ];
 
 const sizeOptions = [
@@ -114,7 +192,7 @@ export default function Home() {
   const [previewImage, setPreviewImage] = useState("");
   const [count, setCount] = useState(1);
 
-  const [model, setModel] = useState("gpt-image-1-mini");
+  const [model, setModel] = useState("openai/gpt-image-1-mini");
   const [size, setSize] = useState("1024x1024");
   const [quality, setQuality] = useState("low");
 
