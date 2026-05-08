@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       }
 
       // 轮询结果
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 90; i++) {
         await sleep(2000);
 
         const resultRes = await fetch(resultUrl, {
