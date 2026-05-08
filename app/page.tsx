@@ -13,7 +13,7 @@ import ReactFlow, {
   Position,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { ImageIcon, Plus, ArrowUp, Sparkles, Maximize2 } from "lucide-react";
+import { ImageIcon, Plus, ArrowUp, Sparkles, Maximize2, Download, X } from "lucide-react";
 
 function ImageNode({ data }: NodeProps) {
   return (
@@ -23,9 +23,31 @@ function ImageNode({ data }: NodeProps) {
         {data.title}
       </div>
 
-      <div className="flex h-72 w-[430px] items-center justify-center rounded-3xl border border-white/10 bg-[#1f1f1f] shadow-2xl">
+      <div className="relative flex h-72 w-[430px] items-center justify-center rounded-3xl border border-white/10 bg-[#1f1f1f] shadow-2xl">
         {data.image ? (
-          <img src={data.image} className="h-full w-full rounded-3xl object-cover" />
+          <>
+            <img
+              src={data.image}
+              className="h-full w-full rounded-3xl object-contain bg-[#1f1f1f]"
+            />
+
+            <div className="absolute right-3 top-3 flex gap-2">
+              <button
+                onClick={() => data.onPreview(data.image)}
+                className="rounded-full bg-black/60 p-2 hover:bg-black"
+              >
+                <Maximize2 size={16} />
+              </button>
+
+              <a
+                href={data.image}
+                download="ai-image.png"
+                className="rounded-full bg-black/60 p-2 hover:bg-black"
+              >
+                <Download size={16} />
+              </a>
+            </div>
+          </>
         ) : (
           <ImageIcon size={54} className="text-white/20" />
         )}
@@ -44,6 +66,8 @@ const nodeTypes = {
 export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
+  const [previewImage, setPreviewImage] = useState("");
+  const [imageCount, setImageCount] = useState(0);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([
     {
@@ -53,6 +77,7 @@ export default function Home() {
       data: {
         title: "Image",
         image: "",
+        onPreview: setPreviewImage,
       },
     },
     {
@@ -62,6 +87,7 @@ export default function Home() {
       data: {
         title: "图片生成",
         image: "",
+        onPreview: setPreviewImage,
       },
     },
   ]);
@@ -108,19 +134,35 @@ export default function Home() {
       const data = await res.json();
 
       if (data.imageUrl) {
-        setNodes((nds) =>
-          nds.map((node) =>
-            node.id === "generate-image"
-              ? {
-                  ...node,
-                  data: {
-                    ...node.data,
-                    image: data.imageUrl,
-                  },
-                }
-              : node
-          )
-        );
+        const newId = `result-${Date.now()}`;
+        const nextCount = imageCount + 1;
+
+        setImageCount(nextCount);
+
+        setNodes((nds) => [
+          ...nds,
+          {
+            id: newId,
+            type: "imageNode",
+            position: { x: 760 + nextCount * 80, y: 220 + nextCount * 70 },
+            data: {
+              title: `生成结果 ${nextCount}`,
+              image: data.imageUrl,
+              onPreview: setPreviewImage,
+            },
+          },
+        ]);
+
+        setEdges((eds) => [
+          ...eds,
+          {
+            id: `edge-${newId}`,
+            source: "input-image",
+            target: newId,
+            animated: true,
+            style: { stroke: "#8b8b8b", strokeWidth: 3 },
+          },
+        ]);
       } else {
         alert(data.error || "图片生成失败");
       }
@@ -196,7 +238,7 @@ export default function Home() {
         />
 
         <div className="flex items-center gap-4 border-t border-white/10 pt-3 text-sm text-white/70">
-          <span>◎ GPT Image 2</span>
+          <span>◎ GPT Image 1.5</span>
           <span>▣ 4:3</span>
           <span>4K · 中</span>
           <span>风格</span>
@@ -212,6 +254,30 @@ export default function Home() {
           </button>
         </div>
       </div>
+
+      {previewImage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-10">
+          <button
+            onClick={() => setPreviewImage("")}
+            className="absolute right-8 top-8 rounded-full bg-white/10 p-3 hover:bg-white/20"
+          >
+            <X size={24} />
+          </button>
+
+          <img
+            src={previewImage}
+            className="max-h-full max-w-full rounded-3xl object-contain"
+          />
+
+          <a
+            href={previewImage}
+            download="ai-image.png"
+            className="absolute bottom-8 rounded-full bg-white px-6 py-3 font-bold text-black"
+          >
+            下载图片
+          </a>
+        </div>
+      )}
     </main>
   );
 }
