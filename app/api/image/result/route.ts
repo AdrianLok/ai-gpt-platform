@@ -22,16 +22,45 @@ export async function POST(req: Request) {
 
     const data = await res.json();
 
+    console.log("GPT IMAGE 2 RESULT:", JSON.stringify(data, null, 2));
+
     const status = data?.data?.status || data?.status;
 
-    const output =
-      data?.data?.outputs?.[0] ||
-      data?.outputs?.[0];
+    const outputs =
+      data?.data?.outputs ||
+      data?.outputs ||
+      data?.data?.output ||
+      data?.output ||
+      [];
 
-    const imageUrl =
-      typeof output === "string"
-        ? output
-        : output?.url || output?.image || output?.image_url;
+    let imageUrl = "";
+
+    if (Array.isArray(outputs) && outputs.length > 0) {
+      const first = outputs[0];
+
+      if (typeof first === "string") {
+        imageUrl = first;
+      } else {
+        imageUrl =
+          first?.url ||
+          first?.image ||
+          first?.image_url ||
+          first?.file_url ||
+          "";
+      }
+    }
+
+    if (!imageUrl && data?.data?.images?.[0]) {
+      imageUrl = data.data.images[0];
+    }
+
+    if (!imageUrl && data?.data?.url) {
+      imageUrl = data.data.url;
+    }
+
+    if (!imageUrl && data?.url) {
+      imageUrl = data.url;
+    }
 
     if (imageUrl) {
       return NextResponse.json({
@@ -41,13 +70,21 @@ export async function POST(req: Request) {
     }
 
     if (status === "failed") {
-      return NextResponse.json({ status: "failed", error: "生成失败" }, { status: 500 });
+      return NextResponse.json(
+        { status: "failed", error: "生成失败" },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
       status: status || "processing",
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "查询结果失败" }, { status: 500 });
+    console.error(error);
+
+    return NextResponse.json(
+      { error: error.message || "查询结果失败" },
+      { status: 500 }
+    );
   }
 }
