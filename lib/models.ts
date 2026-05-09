@@ -1,21 +1,28 @@
 export type ImageModel = {
   label: string;
   value: string;
-  provider: string;
-  tag: string;
-  sub: string;
-  qualityLabel: string;
+  apiUrl: string;
 };
 
 export const imageModels: ImageModel[] = [
   {
-    label: "GPT Image 2 Plus",
+    label: "Gemini 3 Pro",
+    value: "gemini-3-pro-image-preview",
+    apiUrl:
+      "https://api.gptsapi.net/api/v3/google/gemini-3-pro-image-preview/text-to-image",
+  },
+  {
+    label: "GPT Image 2 Plus（实验 / 可能较慢）",
     value: "gpt-image-2-plus",
-    provider: "OpenAI",
-    tag: "主力",
-    sub: "主力生图模型",
-    qualityLabel: "4K",
+    apiUrl:
+      "https://api.gptsapi.net/api/v3/openai/gpt-image-2-plus/text-to-image",
   },
 ];
 
 export const defaultImageModel = imageModels[0];
+
+export function getImageModel(value?: string) {
+  if (!value) return defaultImageModel;
+
+  return imageModels.find((model) => model.value === value);
+}
