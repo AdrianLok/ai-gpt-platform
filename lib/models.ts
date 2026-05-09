@@ -16,14 +16,6 @@ export const imageModels: ImageModel[] = [
     sub: "主力生图模型",
     qualityLabel: "4K",
   },
-  {
-    label: "GPT Image 1.5",
-    value: "gpt-image-1.5",
-    provider: "OpenAI",
-    tag: "备用",
-    sub: "稳定备用模型",
-    qualityLabel: "默认",
-  },
 ];
 
 export const defaultImageModel = imageModels[0];
