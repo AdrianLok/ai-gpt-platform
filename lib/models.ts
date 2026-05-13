@@ -26,3 +26,7 @@ export function getImageModel(value?: string) {
 
   return imageModels.find((model) => model.value === value);
 }
+
+export function isGptModel(modelValue: string) {
+  return modelValue === "gpt-image-2-plus";
+}
